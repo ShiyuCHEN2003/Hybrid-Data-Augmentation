@@ -85,35 +85,3 @@ def train(args):
             sampled_images = diffusion.sample(model, scheduler, n=images.shape[0])
             save_images(sampled_images, os.path.join("results", args.run_name, f"{epoch}.jpg"))
             torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt{epoch}.pt"))
-
-
-def launch():
-    import argparse
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-    args.run_name = f"label{label}"
-    args.epochs = 10000
-    args.batch_size = 5
-    args.image_size = 64
-    args.dataset_path = f"./database/origin/label{label}"
-    args.device = "cuda"
-    args.lr = 1e-4
-    train(args)
-
-
-if __name__ == '__main__':
-    label = 1
-    launch()
-    device = "cuda"
-    model = UNet(T=1000, ch=128, ch_mult=[1, 2, 2, 2], attn=[1],
-                 num_res_blocks=2, dropout=0.1).to(device)
-    ckpt = torch.load(f"./models/ckpt9600.pt")
-    model.load_state_dict(ckpt)
-    diffusion = Diffusion(img_size=64, device=device)
-    scheduler = DDPMScheduler()
-    sampled_images = diffusion.sample(model, scheduler, 360)
-    output_dir = f'./database/output/label{label}'
-    for i, image in enumerate(sampled_images.cpu()):
-        pil_image = Image.fromarray(image.squeeze().numpy())
-        save_path = os.path.join(output_dir, f'image_{i + 1}.png')
-        pil_image.save(save_path)
